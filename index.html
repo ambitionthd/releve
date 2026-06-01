@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relevé d'heures — Technicien</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --bleu:#1b3a6b;
+    --bleu-clair:#eaf0fa;
+    --accent:#2f6fed;
+    --gris:#f4f6f9;
+    --bord:#d7dde6;
+    --texte:#1f2733;
+    --vert:#138a52;
+    --rouge:#c0392b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:'Segoe UI',Roboto,Arial,sans-serif;
+    background:var(--gris);color:var(--texte);
+    -webkit-font-smoothing:antialiased;padding-bottom:60px;
+  }
+  header{
+    background:var(--bleu);color:#fff;padding:22px 18px;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  }
+  header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:.3px;}
+  header .marque{font-size:13px;opacity:.85;}
+  .wrap{max-width:1000px;margin:0 auto;padding:18px;}
+  .carte{
+    background:#fff;border:1px solid var(--bord);border-radius:12px;
+    padding:18px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .carte h2{margin:0 0 14px;font-size:15px;color:var(--bleu);text-transform:uppercase;letter-spacing:.5px;}
+  .grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;}
+  label{display:block;font-size:12px;font-weight:600;margin-bottom:5px;color:#52606d;}
+  input,select{
+    width:100%;padding:9px 10px;border:1px solid var(--bord);border-radius:8px;
+    font-size:14px;font-family:inherit;background:#fff;color:var(--texte);
+  }
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,111,237,.15);}
+  .table-scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;min-width:820px;}
+  th{
+    background:var(--bleu-clair);color:var(--bleu);font-size:11px;text-transform:uppercase;
+    letter-spacing:.4px;padding:10px 8px;text-align:left;border-bottom:2px solid var(--bord);white-space:nowrap;
+  }
+  td{padding:7px 6px;border-bottom:1px solid var(--bord);vertical-align:middle;}
+  td input,td select{padding:7px 8px;font-size:13px;}
+  .total-cell{font-weight:700;color:var(--bleu);text-align:center;font-size:14px;white-space:nowrap;}
+  .btn{
+    border:none;border-radius:8px;padding:11px 18px;font-size:14px;font-weight:600;
+    cursor:pointer;font-family:inherit;transition:.15s;
+  }
+  .btn-primaire{background:var(--accent);color:#fff;}
+  .btn-primaire:hover{background:#2257c4;}
+  .btn-second{background:#fff;color:var(--accent);border:1px solid var(--accent);}
+  .btn-second:hover{background:var(--bleu-clair);}
+  .btn-suppr{background:transparent;color:var(--rouge);border:none;font-size:18px;cursor:pointer;line-height:1;padding:4px 8px;}
+  .barre-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:14px;}
+  .recap{
+    display:flex;gap:24px;flex-wrap:wrap;background:var(--bleu);color:#fff;
+    border-radius:12px;padding:16px 22px;margin-top:4px;
+  }
+  .recap div span{display:block;font-size:12px;opacity:.8;}
+  .recap div strong{font-size:22px;font-weight:700;}
+  .pied{text-align:center;font-size:12px;color:#8a96a3;margin-top:10px;}
+  @media(max-width:600px){header h1{font-size:17px;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Relevé d'heures — Technicien</h1>
+  <div class="marque">AMBITION THD</div>
+</header>
+
+<div class="wrap">
+
+  <div class="carte">
+    <h2>Informations</h2>
+    <div class="grille">
+      <div>
+        <label for="nom">Nom du technicien</label>
+        <input id="nom" type="text" placeholder="Prénom NOM">
+      </div>
+      <div>
+        <label for="periode">Période (semaine / mois)</label>
+        <input id="periode" type="text" placeholder="Ex : Semaine 23 — juin 2026">
+      </div>
+      <div>
+        <label for="dateDebut">Du</label>
+        <input id="dateDebut" type="date">
+      </div>
+      <div>
+        <label for="dateFin">Au</label>
+        <input id="dateFin" type="date">
+      </div>
+    </div>
+  </div>
+
+  <div class="carte">
+    <h2>Saisie des journées</h2>
+    <div class="table-scroll">
+      <table id="tableau">
+        <thead>
+          <tr>
+            <th style="min-width:140px">Date</th>
+            <th>Début</th>
+            <th>Fin</th>
+            <th>Pause (min)</th>
+            <th style="min-width:170px">Chantier / Client</th>
+            <th>Grand dépl.</th>
+            <th>Total (h)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="corps"></tbody>
+      </table>
+    </div>
+    <div class="barre-actions">
+      <button class="btn btn-second" onclick="ajouterLigne()">+ Ajouter une journée</button>
+    </div>
+  </div>
+
+  <div class="recap">
+    <div><span>Total heures travaillées</span><strong id="totalHeures">0,00 h</strong></div>
+    <div><span>Jours avec grand déplacement</span><strong id="totalGD">0</strong></div>
+    <div><span>Nombre de journées</span><strong id="totalJours">0</strong></div>
+  </div>
+
+  <div class="barre-actions">
+    <button class="btn btn-primaire" onclick="genererPDF()">📄 Générer le PDF</button>
+  </div>
+
+  <p class="pied">Remplissez votre relevé puis cliquez sur « Générer le PDF » pour le télécharger et l'envoyer.</p>
+</div>
+
+<script>
+function ligneHTML(){
+  return `<tr>
+    <td><input type="date" class="d-date" onchange="recalc()"></td>
+    <td><input type="time" class="d-debut" onchange="recalc()"></td>
+    <td><input type="time" class="d-fin" onchange="recalc()"></td>
+    <td><input type="number" class="d-pause" min="0" step="5" value="0" onchange="recalc()" oninput="recalc()"></td>
+    <td><input type="text" class="d-chantier" placeholder="Nom du chantier / client"></td>
+    <td>
+      <select class="d-gd" onchange="recalc()">
+        <option value="Non">Non</option>
+        <option value="Oui">Oui</option>
+      </select>
+    </td>
+    <td class="total-cell d-total">0,00</td>
+    <td><button class="btn-suppr" title="Supprimer" onclick="supprimer(this)">×</button></td>
+  </tr>`;
+}
+
+function ajouterLigne(){
+  document.getElementById('corps').insertAdjacentHTML('beforeend', ligneHTML());
+  recalc();
+}
+
+function supprimer(btn){
+  btn.closest('tr').remove();
+  recalc();
+}
+
+function heuresLigne(tr){
+  const deb = tr.querySelector('.d-debut').value;
+  const fin = tr.querySelector('.d-fin').value;
+  const pause = parseFloat(tr.querySelector('.d-pause').value) || 0;
+  if(!deb || !fin) return 0;
+  const [hd,md] = deb.split(':').map(Number);
+  const [hf,mf] = fin.split(':').map(Number);
+  let mins = (hf*60+mf) - (hd*60+md);
+  if(mins < 0) mins += 24*60; // service de nuit
+  mins -= pause;
+  if(mins < 0) mins = 0;
+  return mins/60;
+}
+
+function recalc(){
+  let total=0, jours=0, gd=0;
+  document.querySelectorAll('#corps tr').forEach(tr=>{
+    const h = heuresLigne(tr);
+    tr.querySelector('.d-total').textContent = h.toFixed(2).replace('.',',');
+    total += h;
+    if(tr.querySelector('.d-date').value || h>0) jours++;
+    if(tr.querySelector('.d-gd').value === 'Oui') gd++;
+  });
+  document.getElementById('totalHeures').textContent = total.toFixed(2).replace('.',',') + ' h';
+  document.getElementById('totalGD').textContent = gd;
+  document.getElementById('totalJours').textContent = jours;
+}
+
+function fmtDate(v){
+  if(!v) return '';
+  const [a,m,j] = v.split('-');
+  return `${j}/${m}/${a}`;
+}
+
+function genererPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const nom = document.getElementById('nom').value || '—';
+  const periode = document.getElementById('periode').value || '—';
+  const du = fmtDate(document.getElementById('dateDebut').value);
+  const au = fmtDate(document.getElementById('dateFin').value);
+
+  // En-tête
+  doc.setFillColor(27,58,107);
+  doc.rect(0,0,210,26,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(15); doc.setFont(undefined,'bold');
+  doc.text("Relevé d'heures — Technicien", 14, 13);
+  doc.setFontSize(10); doc.setFont(undefined,'normal');
+  doc.text("AMBITION THD", 14, 20);
+
+  // Infos
+  doc.setTextColor(31,39,51);
+  doc.setFontSize(11);
+  let y = 36;
+  doc.setFont(undefined,'bold'); doc.text("Technicien : ", 14, y);
+  doc.setFont(undefined,'normal'); doc.text(nom, 45, y);
+  doc.setFont(undefined,'bold'); doc.text("Période : ", 120, y);
+  doc.setFont(undefined,'normal'); doc.text(periode, 142, y);
+  y += 7;
+  if(du || au){
+    doc.setFont(undefined,'bold'); doc.text("Du : ", 14, y);
+    doc.setFont(undefined,'normal'); doc.text(`${du||'—'}  au  ${au||'—'}`, 28, y);
+    y += 4;
+  }
+
+  // Tableau
+  const lignes = [];
+  let total=0, gd=0;
+  document.querySelectorAll('#corps tr').forEach(tr=>{
+    const date = fmtDate(tr.querySelector('.d-date').value);
+    const deb = tr.querySelector('.d-debut').value;
+    const fin = tr.querySelector('.d-fin').value;
+    const pause = tr.querySelector('.d-pause').value || '0';
+    const chantier = tr.querySelector('.d-chantier').value;
+    const gdv = tr.querySelector('.d-gd').value;
+    const h = heuresLigne(tr);
+    if(!date && !deb && !fin && !chantier) return;
+    total += h;
+    if(gdv==='Oui') gd++;
+    lignes.push([date, deb, fin, pause, chantier, gdv, h.toFixed(2).replace('.',',')]);
+  });
+
+  doc.autoTable({
+    startY: y+4,
+    head: [['Date','Début','Fin','Pause (min)','Chantier / Client','Grand dépl.','Total (h)']],
+    body: lignes.length ? lignes : [['—','','','','','','0,00']],
+    theme:'grid',
+    headStyles:{fillColor:[47,111,237],textColor:255,fontSize:9},
+    bodyStyles:{fontSize:9,textColor:[31,39,51]},
+    alternateRowStyles:{fillColor:[244,246,249]},
+    columnStyles:{6:{halign:'center',fontStyle:'bold'},3:{halign:'center'},5:{halign:'center'}},
+  });
+
+  let fy = doc.lastAutoTable.finalY + 10;
+  doc.setFontSize(12); doc.setFont(undefined,'bold');
+  doc.setTextColor(27,58,107);
+  doc.text(`Total heures travaillées : ${total.toFixed(2).replace('.',',')} h`, 14, fy);
+  doc.setFontSize(10); doc.setFont(undefined,'normal'); doc.setTextColor(31,39,51);
+  doc.text(`Jours avec grand déplacement : ${gd}`, 14, fy+7);
+
+  // Signature
+  fy += 24;
+  doc.setDrawColor(180);
+  doc.text("Signature du technicien :", 14, fy);
+  doc.line(70, fy, 130, fy);
+  doc.setFontSize(8); doc.setTextColor(140);
+  doc.text("Document généré le " + new Date().toLocaleDateString('fr-FR'), 14, 287);
+
+  const nomFichier = `releve-heures_${nom.replace(/\s+/g,'-')}_${periode.replace(/[^\w]+/g,'-')}.pdf`;
+  doc.save(nomFichier);
+}
+
+// 5 lignes au démarrage
+for(let i=0;i<5;i++) ajouterLigne();
+</script>
+</body>
+</html>
