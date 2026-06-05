@@ -3,78 +3,86 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Relevé d'heures — Technicien</title>
+<title>Relevé d'heures — Ambition THD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="https://ambitionthd.com/wp-content/uploads/2024/09/thd-logo-transparent-1-300x300.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   :root{
-    --bleu:#1b3a6b;
-    --bleu-clair:#eaf0fa;
-    --accent:#2f6fed;
-    --gris:#f4f6f9;
-    --bord:#d7dde6;
+    --cyan:#00a8d8;
+    --cyan-fonce:#0089b0;
+    --cyan-clair:#e6f7fc;
     --texte:#1f2733;
-    --vert:#138a52;
+    --gris:#f4f7f9;
+    --bord:#d7e1e8;
     --rouge:#c0392b;
   }
   *{box-sizing:border-box;}
   body{
-    margin:0;font-family:'Segoe UI',Roboto,Arial,sans-serif;
+    margin:0;font-family:'Montserrat',Segoe UI,Arial,sans-serif;
     background:var(--gris);color:var(--texte);
     -webkit-font-smoothing:antialiased;padding-bottom:60px;
   }
   header{
-    background:var(--bleu);color:#fff;padding:22px 18px;
-    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    background:#fff;border-bottom:3px solid var(--cyan);padding:16px 24px;
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
   }
-  header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:.3px;}
-  header .marque{font-size:13px;opacity:.85;}
+  header img{height:46px;width:auto;}
+  header .titres h1{margin:0;font-size:19px;font-weight:700;color:var(--texte);letter-spacing:.2px;}
+  header .titres p{margin:2px 0 0;font-size:12px;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:1px;}
   .wrap{max-width:1000px;margin:0 auto;padding:18px;}
   .carte{
     background:#fff;border:1px solid var(--bord);border-radius:12px;
     padding:18px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);
   }
-  .carte h2{margin:0 0 14px;font-size:15px;color:var(--bleu);text-transform:uppercase;letter-spacing:.5px;}
+  .carte h2{margin:0 0 14px;font-size:14px;color:var(--cyan);text-transform:uppercase;letter-spacing:.6px;font-weight:700;
+    display:inline-block;padding-bottom:6px;border-bottom:3px solid var(--cyan);}
   .grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;}
   label{display:block;font-size:12px;font-weight:600;margin-bottom:5px;color:#52606d;}
   input,select{
     width:100%;padding:9px 10px;border:1px solid var(--bord);border-radius:8px;
     font-size:14px;font-family:inherit;background:#fff;color:var(--texte);
   }
-  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,111,237,.15);}
+  input:focus,select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,168,216,.18);}
   .table-scroll{overflow-x:auto;}
   table{width:100%;border-collapse:collapse;min-width:820px;}
   th{
-    background:var(--bleu-clair);color:var(--bleu);font-size:11px;text-transform:uppercase;
-    letter-spacing:.4px;padding:10px 8px;text-align:left;border-bottom:2px solid var(--bord);white-space:nowrap;
+    background:var(--cyan-clair);color:var(--cyan-fonce);font-size:11px;text-transform:uppercase;
+    letter-spacing:.4px;padding:10px 8px;text-align:left;border-bottom:2px solid var(--cyan);white-space:nowrap;font-weight:700;
   }
   td{padding:7px 6px;border-bottom:1px solid var(--bord);vertical-align:middle;}
   td input,td select{padding:7px 8px;font-size:13px;}
-  .total-cell{font-weight:700;color:var(--bleu);text-align:center;font-size:14px;white-space:nowrap;}
+  .total-cell{font-weight:700;color:var(--cyan-fonce);text-align:center;font-size:14px;white-space:nowrap;}
   .btn{
     border:none;border-radius:8px;padding:11px 18px;font-size:14px;font-weight:600;
     cursor:pointer;font-family:inherit;transition:.15s;
   }
-  .btn-primaire{background:var(--accent);color:#fff;}
-  .btn-primaire:hover{background:#2257c4;}
-  .btn-second{background:#fff;color:var(--accent);border:1px solid var(--accent);}
-  .btn-second:hover{background:var(--bleu-clair);}
+  .btn-primaire{background:var(--cyan);color:#fff;}
+  .btn-primaire:hover{background:var(--cyan-fonce);}
+  .btn-second{background:#fff;color:var(--cyan-fonce);border:1px solid var(--cyan);}
+  .btn-second:hover{background:var(--cyan-clair);}
   .btn-suppr{background:transparent;color:var(--rouge);border:none;font-size:18px;cursor:pointer;line-height:1;padding:4px 8px;}
   .barre-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:14px;}
   .recap{
-    display:flex;gap:24px;flex-wrap:wrap;background:var(--bleu);color:#fff;
+    display:flex;gap:24px;flex-wrap:wrap;background:var(--cyan);color:#fff;
     border-radius:12px;padding:16px 22px;margin-top:4px;
   }
-  .recap div span{display:block;font-size:12px;opacity:.8;}
+  .recap div span{display:block;font-size:12px;opacity:.85;font-weight:500;}
   .recap div strong{font-size:22px;font-weight:700;}
   .pied{text-align:center;font-size:12px;color:#8a96a3;margin-top:10px;}
-  @media(max-width:600px){header h1{font-size:17px;}}
+  @media(max-width:600px){header .titres h1{font-size:16px;}}
 </style>
 </head>
 <body>
 <header>
-  <h1>Relevé d'heures — Technicien</h1>
-  <div class="marque">AMBITION THD</div>
+  <img src="https://ambitionthd.com/wp-content/uploads/2024/09/THD-transparent.png" alt="Ambition THD" onerror="this.style.display='none'">
+  <div class="titres">
+    <h1>Relevé d'heures — Technicien</h1>
+    <p>Ambition THD</p>
+  </div>
 </header>
 
 <div class="wrap">
@@ -139,6 +147,22 @@
 </div>
 
 <script>
+const LOGO_URL = "https://ambitionthd.com/wp-content/uploads/2024/09/THD-transparent.png";
+let LOGO_DATA = null;
+
+// Pré-charge le logo en base64 pour l'insérer dans le PDF
+(function preloadLogo(){
+  const img = new Image(); img.crossOrigin = "anonymous";
+  img.onload = function(){
+    try{
+      const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+      c.getContext('2d').drawImage(img,0,0);
+      LOGO_DATA = c.toDataURL('image/png');
+    }catch(e){ LOGO_DATA = null; }
+  };
+  img.src = LOGO_URL + "?v=1";
+})();
+
 function ligneHTML(){
   return `<tr>
     <td><input type="date" class="d-date" onchange="recalc()"></td>
@@ -209,19 +233,23 @@ function genererPDF(){
   const du = fmtDate(document.getElementById('dateDebut').value);
   const au = fmtDate(document.getElementById('dateFin').value);
 
-  // En-tête
-  doc.setFillColor(27,58,107);
-  doc.rect(0,0,210,26,'F');
-  doc.setTextColor(255,255,255);
+  // En-tête (fond blanc, logo + titre, filet cyan) — charte Ambition THD
+  if(LOGO_DATA){
+    try{ doc.addImage(LOGO_DATA,'PNG',14,10,22,22); }catch(e){}
+  }
+  doc.setTextColor(31,39,51);
   doc.setFontSize(15); doc.setFont(undefined,'bold');
-  doc.text("Relevé d'heures — Technicien", 14, 13);
+  doc.text("Relevé d'heures — Technicien", 42, 19);
   doc.setFontSize(10); doc.setFont(undefined,'normal');
-  doc.text("AMBITION THD", 14, 20);
+  doc.setTextColor(0,168,216);
+  doc.text("AMBITION THD", 42, 26);
+  doc.setDrawColor(0,168,216); doc.setLineWidth(0.8);
+  doc.line(14, 36, 196, 36);
 
   // Infos
   doc.setTextColor(31,39,51);
   doc.setFontSize(11);
-  let y = 36;
+  let y = 46;
   doc.setFont(undefined,'bold'); doc.text("Technicien : ", 14, y);
   doc.setFont(undefined,'normal'); doc.text(nom, 45, y);
   doc.setFont(undefined,'bold'); doc.text("Période : ", 120, y);
@@ -255,15 +283,15 @@ function genererPDF(){
     head: [['Date','Début','Fin','Pause (min)','Chantier / Client','Grand dépl.','Total (h)']],
     body: lignes.length ? lignes : [['—','','','','','','0,00']],
     theme:'grid',
-    headStyles:{fillColor:[47,111,237],textColor:255,fontSize:9},
+    headStyles:{fillColor:[0,168,216],textColor:255,fontSize:9},
     bodyStyles:{fontSize:9,textColor:[31,39,51]},
-    alternateRowStyles:{fillColor:[244,246,249]},
+    alternateRowStyles:{fillColor:[230,247,252]},
     columnStyles:{6:{halign:'center',fontStyle:'bold'},3:{halign:'center'},5:{halign:'center'}},
   });
 
   let fy = doc.lastAutoTable.finalY + 10;
   doc.setFontSize(12); doc.setFont(undefined,'bold');
-  doc.setTextColor(27,58,107);
+  doc.setTextColor(0,137,176);
   doc.text(`Total heures travaillées : ${total.toFixed(2).replace('.',',')} h`, 14, fy);
   doc.setFontSize(10); doc.setFont(undefined,'normal'); doc.setTextColor(31,39,51);
   doc.text(`Jours avec grand déplacement : ${gd}`, 14, fy+7);
@@ -274,7 +302,7 @@ function genererPDF(){
   doc.text("Signature du technicien :", 14, fy);
   doc.line(70, fy, 130, fy);
   doc.setFontSize(8); doc.setTextColor(140);
-  doc.text("Document généré le " + new Date().toLocaleDateString('fr-FR'), 14, 287);
+  doc.text("Ambition THD — Document généré le " + new Date().toLocaleDateString('fr-FR'), 14, 287);
 
   const nomFichier = `releve-heures_${nom.replace(/\s+/g,'-')}_${periode.replace(/[^\w]+/g,'-')}.pdf`;
   doc.save(nomFichier);
