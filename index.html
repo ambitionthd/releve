@@ -33,7 +33,7 @@
   header img{height:46px;width:auto;}
   header .titres h1{margin:0;font-size:19px;font-weight:700;color:var(--texte);letter-spacing:.2px;}
   header .titres p{margin:2px 0 0;font-size:12px;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:1px;}
-  .wrap{max-width:1000px;margin:0 auto;padding:18px;}
+  .wrap{max-width:1060px;margin:0 auto;padding:18px;}
   .carte{
     background:#fff;border:1px solid var(--bord);border-radius:12px;
     padding:18px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);
@@ -48,7 +48,7 @@
   }
   input:focus,select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,168,216,.18);}
   .table-scroll{overflow-x:auto;}
-  table{width:100%;border-collapse:collapse;min-width:820px;}
+  table{width:100%;border-collapse:collapse;min-width:900px;}
   th{
     background:var(--cyan-clair);color:var(--cyan-fonce);font-size:11px;text-transform:uppercase;
     letter-spacing:.4px;padding:10px 8px;text-align:left;border-bottom:2px solid var(--cyan);white-space:nowrap;font-weight:700;
@@ -73,6 +73,11 @@
   .recap div span{display:block;font-size:12px;opacity:.85;font-weight:500;}
   .recap div strong{font-size:22px;font-weight:700;}
   .pied{text-align:center;font-size:12px;color:#8a96a3;margin-top:10px;}
+  #signature{
+    width:100%;max-width:520px;height:160px;border:1.5px dashed var(--cyan);
+    border-radius:10px;background:#fff;cursor:crosshair;touch-action:none;display:block;
+  }
+  .sign-note{font-size:12px;color:#8a96a3;margin:8px 0 0;}
   @media(max-width:600px){header .titres h1{font-size:16px;}}
 </style>
 </head>
@@ -119,7 +124,8 @@
             <th>Début</th>
             <th>Fin</th>
             <th>Pause (min)</th>
-            <th style="min-width:170px">Chantier / Client</th>
+            <th>Route (h)</th>
+            <th style="min-width:160px">Chantier / Client</th>
             <th>Grand dépl.</th>
             <th>Total (h)</th>
             <th></th>
@@ -135,15 +141,25 @@
 
   <div class="recap">
     <div><span>Total heures travaillées</span><strong id="totalHeures">0,00 h</strong></div>
+    <div><span>Total heures de route</span><strong id="totalRoute">0,00 h</strong></div>
     <div><span>Jours avec grand déplacement</span><strong id="totalGD">0</strong></div>
     <div><span>Nombre de journées</span><strong id="totalJours">0</strong></div>
+  </div>
+
+  <div class="carte" style="margin-top:18px">
+    <h2>Signature du technicien</h2>
+    <canvas id="signature"></canvas>
+    <p class="sign-note">Signez ci-dessus au doigt (mobile) ou à la souris. La signature sera intégrée au PDF.</p>
+    <div class="barre-actions">
+      <button class="btn btn-second" onclick="effacerSignature()">Effacer la signature</button>
+    </div>
   </div>
 
   <div class="barre-actions">
     <button class="btn btn-primaire" onclick="genererPDF()">📄 Générer le PDF</button>
   </div>
 
-  <p class="pied">Remplissez votre relevé puis cliquez sur « Générer le PDF » pour le télécharger et l'envoyer.</p>
+  <p class="pied">Remplissez votre relevé, signez, puis cliquez sur « Générer le PDF » pour le télécharger et l'envoyer.</p>
 </div>
 
 <script>
@@ -163,12 +179,65 @@ let LOGO_DATA = null;
   img.src = LOGO_URL + "?v=1";
 })();
 
+/* ---------- Signature ---------- */
+const sigCanvas = document.getElementById('signature');
+const sigCtx = sigCanvas.getContext('2d');
+let sigVide = true, dessine = false, dernier = null;
+
+function initSignature(){
+  // taille interne = taille affichée x2 (netteté)
+  const rect = sigCanvas.getBoundingClientRect();
+  const data = sigVide ? null : sigCanvas.toDataURL();
+  sigCanvas.width = rect.width * 2;
+  sigCanvas.height = rect.height * 2;
+  sigCtx.scale(2,2);
+  sigCtx.lineWidth = 2.2;
+  sigCtx.lineCap = 'round';
+  sigCtx.lineJoin = 'round';
+  sigCtx.strokeStyle = '#1f2733';
+  if(data){
+    const im = new Image();
+    im.onload = ()=>sigCtx.drawImage(im,0,0,rect.width,rect.height);
+    im.src = data;
+  }
+}
+function posSig(e){
+  const r = sigCanvas.getBoundingClientRect();
+  return {x: e.clientX - r.left, y: e.clientY - r.top};
+}
+sigCanvas.addEventListener('pointerdown', e=>{
+  e.preventDefault();
+  sigCanvas.setPointerCapture(e.pointerId);
+  dessine = true; dernier = posSig(e);
+});
+sigCanvas.addEventListener('pointermove', e=>{
+  if(!dessine) return;
+  e.preventDefault();
+  const p = posSig(e);
+  sigCtx.beginPath();
+  sigCtx.moveTo(dernier.x, dernier.y);
+  sigCtx.lineTo(p.x, p.y);
+  sigCtx.stroke();
+  dernier = p; sigVide = false;
+});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>
+  sigCanvas.addEventListener(ev, ()=>{ dessine = false; })
+);
+function effacerSignature(){
+  sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+  sigVide = true;
+}
+window.addEventListener('load', initSignature);
+window.addEventListener('resize', initSignature);
+
+/* ---------- Tableau ---------- */
 function ligneHTML(){
   return `<tr>
     <td><input type="date" class="d-date" onchange="recalc()"></td>
     <td><input type="time" class="d-debut" onchange="recalc()"></td>
     <td><input type="time" class="d-fin" onchange="recalc()"></td>
     <td><input type="number" class="d-pause" min="0" step="5" value="0" onchange="recalc()" oninput="recalc()"></td>
+    <td><input type="number" class="d-route" min="0" step="0.5" value="0" onchange="recalc()" oninput="recalc()"></td>
     <td><input type="text" class="d-chantier" placeholder="Nom du chantier / client"></td>
     <td>
       <select class="d-gd" onchange="recalc()">
@@ -206,15 +275,17 @@ function heuresLigne(tr){
 }
 
 function recalc(){
-  let total=0, jours=0, gd=0;
+  let total=0, route=0, jours=0, gd=0;
   document.querySelectorAll('#corps tr').forEach(tr=>{
     const h = heuresLigne(tr);
     tr.querySelector('.d-total').textContent = h.toFixed(2).replace('.',',');
     total += h;
+    route += parseFloat(tr.querySelector('.d-route').value) || 0;
     if(tr.querySelector('.d-date').value || h>0) jours++;
     if(tr.querySelector('.d-gd').value === 'Oui') gd++;
   });
   document.getElementById('totalHeures').textContent = total.toFixed(2).replace('.',',') + ' h';
+  document.getElementById('totalRoute').textContent = route.toFixed(2).replace('.',',') + ' h';
   document.getElementById('totalGD').textContent = gd;
   document.getElementById('totalJours').textContent = jours;
 }
@@ -263,44 +334,56 @@ function genererPDF(){
 
   // Tableau
   const lignes = [];
-  let total=0, gd=0;
+  let total=0, route=0, gd=0;
   document.querySelectorAll('#corps tr').forEach(tr=>{
     const date = fmtDate(tr.querySelector('.d-date').value);
     const deb = tr.querySelector('.d-debut').value;
     const fin = tr.querySelector('.d-fin').value;
     const pause = tr.querySelector('.d-pause').value || '0';
+    const rte = parseFloat(tr.querySelector('.d-route').value) || 0;
     const chantier = tr.querySelector('.d-chantier').value;
     const gdv = tr.querySelector('.d-gd').value;
     const h = heuresLigne(tr);
     if(!date && !deb && !fin && !chantier) return;
-    total += h;
+    total += h; route += rte;
     if(gdv==='Oui') gd++;
-    lignes.push([date, deb, fin, pause, chantier, gdv, h.toFixed(2).replace('.',',')]);
+    lignes.push([date, deb, fin, pause, rte?rte.toFixed(2).replace('.',','):'—', chantier, gdv, h.toFixed(2).replace('.',',')]);
   });
 
   doc.autoTable({
     startY: y+4,
-    head: [['Date','Début','Fin','Pause (min)','Chantier / Client','Grand dépl.','Total (h)']],
-    body: lignes.length ? lignes : [['—','','','','','','0,00']],
+    head: [['Date','Début','Fin','Pause (min)','Route (h)','Chantier / Client','Grand dépl.','Total (h)']],
+    body: lignes.length ? lignes : [['—','','','','','','','0,00']],
     theme:'grid',
-    headStyles:{fillColor:[0,168,216],textColor:255,fontSize:9},
+    headStyles:{fillColor:[0,168,216],textColor:255,fontSize:8.5},
     bodyStyles:{fontSize:9,textColor:[31,39,51]},
     alternateRowStyles:{fillColor:[230,247,252]},
-    columnStyles:{6:{halign:'center',fontStyle:'bold'},3:{halign:'center'},5:{halign:'center'}},
+    columnStyles:{7:{halign:'center',fontStyle:'bold'},3:{halign:'center'},4:{halign:'center'},6:{halign:'center'}},
   });
 
   let fy = doc.lastAutoTable.finalY + 10;
+  if(fy > 230){ doc.addPage(); fy = 30; }
   doc.setFontSize(12); doc.setFont(undefined,'bold');
   doc.setTextColor(0,137,176);
   doc.text(`Total heures travaillées : ${total.toFixed(2).replace('.',',')} h`, 14, fy);
   doc.setFontSize(10); doc.setFont(undefined,'normal'); doc.setTextColor(31,39,51);
-  doc.text(`Jours avec grand déplacement : ${gd}`, 14, fy+7);
+  doc.text(`Total heures de route : ${route.toFixed(2).replace('.',',')} h`, 14, fy+7);
+  doc.text(`Jours avec grand déplacement : ${gd}`, 14, fy+14);
 
   // Signature
-  fy += 24;
-  doc.setDrawColor(180);
+  fy += 30;
+  doc.setFontSize(10);
   doc.text("Signature du technicien :", 14, fy);
-  doc.line(70, fy, 130, fy);
+  if(!sigVide){
+    try{
+      doc.addImage(sigCanvas.toDataURL('image/png'), 'PNG', 64, fy-12, 60, 18.5);
+    }catch(e){
+      doc.setDrawColor(180); doc.line(64, fy, 130, fy);
+    }
+  }else{
+    doc.setDrawColor(180); doc.line(64, fy, 130, fy);
+  }
+
   doc.setFontSize(8); doc.setTextColor(140);
   doc.text("Ambition THD — Document généré le " + new Date().toLocaleDateString('fr-FR'), 14, 287);
 
