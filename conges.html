@@ -33,6 +33,10 @@
   header img{height:46px;width:auto;}
   header .titres h1{margin:0;font-size:19px;font-weight:700;color:var(--texte);letter-spacing:.2px;}
   header .titres p{margin:2px 0 0;font-size:12px;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:1px;}
+  .banniere{
+    background:var(--cyan);color:#fff;padding:12px 24px;font-size:14px;font-weight:600;
+    display:none;align-items:center;gap:10px;
+  }
   .wrap{max-width:860px;margin:0 auto;padding:18px;}
   .carte{
     background:#fff;border:1px solid var(--bord);border-radius:12px;
@@ -80,6 +84,9 @@
   }
   .decision input{width:auto;accent-color:var(--cyan);}
   .decision label:has(input:checked){border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,168,216,.18);}
+  .lien-zone{display:none;margin-top:12px;}
+  .lien-zone input{font-size:12px;color:#52606d;}
+  .ok-copie{color:var(--vert);font-size:13px;font-weight:600;display:none;margin-top:6px;}
   @media(max-width:600px){header .titres h1{font-size:16px;}}
 </style>
 </head>
@@ -91,6 +98,8 @@
     <p>Ambition THD</p>
   </div>
 </header>
+
+<div class="banniere" id="banniereResp">📩 Demande pré-remplie reçue — vérifiez les éléments puis complétez la partie « Responsable » en bas de page.</div>
 
 <div class="wrap">
 
@@ -152,6 +161,23 @@
     </div>
   </div>
 
+  <div class="carte" id="carteTransmettre">
+    <h2>Transmettre au responsable</h2>
+    <p style="font-size:13px;color:#52606d;margin:0 0 6px">
+      Une fois la demande remplie et signée, générez le lien et envoyez-le à votre responsable
+      (WhatsApp, SMS, email…). Il ouvrira cette fiche <strong>pré-remplie</strong> et pourra valider ou refuser.
+    </p>
+    <div class="barre-actions">
+      <button class="btn btn-primaire" onclick="genererLien()">🔗 Générer et copier le lien</button>
+      <button class="btn btn-second" id="btnPartager" style="display:none" onclick="partagerLien()">📤 Partager…</button>
+    </div>
+    <div class="lien-zone" id="lienZone">
+      <label>Lien à envoyer au responsable :</label>
+      <input id="lienGenere" type="text" readonly onclick="this.select()">
+    </div>
+    <p class="ok-copie" id="okCopie">✔ Lien copié dans le presse-papier !</p>
+  </div>
+
   <div class="carte carte-resp">
     <h2>Partie réservée au responsable</h2>
     <div class="decision">
@@ -186,7 +212,7 @@
     <button class="btn btn-primaire" onclick="genererPDF()">📄 Générer le PDF</button>
   </div>
 
-  <p class="pied">Le demandeur remplit et signe, le responsable complète sa partie, puis « Générer le PDF ».</p>
+  <p class="pied">Le demandeur remplit, signe et transmet le lien — le responsable valide puis génère le PDF.</p>
 </div>
 
 <script>
@@ -247,7 +273,16 @@ function creerPad(id){
   pads[id] = {
     canvas: cv,
     estVide: ()=>etat.vide,
-    effacer: ()=>{ ctx.clearRect(0,0,cv.width,cv.height); etat.vide = true; }
+    effacer: ()=>{ ctx.clearRect(0,0,cv.width,cv.height); etat.vide = true; },
+    charger: (dataUrl)=>{
+      const im = new Image();
+      im.onload = ()=>{
+        const r = cv.getBoundingClientRect();
+        ctx.drawImage(im, 0, 0, r.width, r.height);
+        etat.vide = false;
+      };
+      im.src = dataUrl;
+    }
   };
 }
 creerPad('signDemandeur');
@@ -280,6 +315,98 @@ function fmtDate(v){
   const [a,m,j] = v.split('-');
   return `${j}/${m}/${a}`;
 }
+
+/* ---------- Lien pré-rempli pour le responsable ---------- */
+function signatureCompacte(){
+  // signature réduite pour tenir dans l'URL
+  if(pads.signDemandeur.estVide()) return null;
+  const src = pads.signDemandeur.canvas;
+  const c = document.createElement('canvas');
+  c.width = 360; c.height = 105;
+  c.getContext('2d').drawImage(src, 0, 0, 360, 105);
+  return c.toDataURL('image/png');
+}
+
+function encoderDonnees(){
+  const data = {
+    n: document.getElementById('nom').value,
+    f: document.getElementById('fonction').value,
+    dd: document.getElementById('dateDemande').value,
+    t: document.getElementById('typeConge').value,
+    du: document.getElementById('dateDu').value,
+    au: document.getElementById('dateAu').value,
+    m: document.getElementById('motif').value,
+    s: signatureCompacte()
+  };
+  const json = JSON.stringify(data);
+  return btoa(unescape(encodeURIComponent(json))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+function decoderDonnees(b64){
+  const norm = b64.replace(/-/g,'+').replace(/_/g,'/');
+  const json = decodeURIComponent(escape(atob(norm)));
+  return JSON.parse(json);
+}
+
+function construireLien(){
+  return location.origin + location.pathname + '#d=' + encoderDonnees();
+}
+
+function genererLien(){
+  const nom = document.getElementById('nom').value.trim();
+  if(!nom){ alert("Indiquez d'abord votre nom."); return; }
+  if(!document.getElementById('dateDu').value || !document.getElementById('dateAu').value){
+    alert("Indiquez les dates de début et de fin d'absence."); return;
+  }
+  const lien = construireLien();
+  const zone = document.getElementById('lienZone');
+  const champ = document.getElementById('lienGenere');
+  champ.value = lien;
+  zone.style.display = 'block';
+  // copie dans le presse-papier
+  function ok(){
+    const msg = document.getElementById('okCopie');
+    msg.style.display = 'block';
+    setTimeout(()=>{ msg.style.display = 'none'; }, 4000);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(lien).then(ok).catch(()=>{ champ.select(); document.execCommand('copy'); ok(); });
+  }else{
+    champ.select(); document.execCommand('copy'); ok();
+  }
+  if(navigator.share) document.getElementById('btnPartager').style.display = 'inline-block';
+}
+
+function partagerLien(){
+  const lien = document.getElementById('lienGenere').value || construireLien();
+  const nom = document.getElementById('nom').value || 'un technicien';
+  navigator.share({
+    title: "Demande de congés — Ambition THD",
+    text: `Demande de congés de ${nom} à valider :`,
+    url: lien
+  }).catch(()=>{});
+}
+
+/* ---------- Pré-remplissage à l'ouverture (côté responsable) ---------- */
+window.addEventListener('load', ()=>{
+  if(location.hash.startsWith('#d=')){
+    try{
+      const d = decoderDonnees(location.hash.slice(3));
+      document.getElementById('nom').value = d.n || '';
+      document.getElementById('fonction').value = d.f || '';
+      document.getElementById('dateDemande').value = d.dd || '';
+      document.getElementById('typeConge').value = d.t || 'Congé payé (avec solde)';
+      document.getElementById('dateDu').value = d.du || '';
+      document.getElementById('dateAu').value = d.au || '';
+      document.getElementById('motif').value = d.m || '';
+      calcJours();
+      if(d.s) setTimeout(()=>pads.signDemandeur.charger(d.s), 150);
+      document.getElementById('banniereResp').style.display = 'flex';
+      document.getElementById('carteTransmettre').style.display = 'none';
+      document.getElementById('respDate').value = new Date().toISOString().slice(0,10);
+    }catch(e){ console.warn('Lien invalide', e); }
+  }
+});
 
 /* ---------- PDF ---------- */
 function genererPDF(){
@@ -327,7 +454,6 @@ function genererPDF(){
   doc.setTextColor(...FONCE); doc.setFontSize(11); doc.setFont(undefined,'bold');
   doc.text("CONGÉ DEMANDÉ", 14, y); y += 8;
 
-  // Cases type de congé
   doc.setTextColor(...TXT); doc.setFontSize(10); doc.setFont(undefined,'normal');
   function caseCochee(x, yy, coche, libelle){
     doc.setDrawColor(...TXT); doc.setLineWidth(0.3);
